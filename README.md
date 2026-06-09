@@ -1,6 +1,6 @@
 # OpenLinkHub NixOS Module
 
-I started this module more than a month ago after buying some Corsair fans and knowing absolutely nothing about the inner workings of NixOS and systemd. I chose to fix and refine it every day while hitting my token limits on Claude.
+I started this module more than a month ago after buying some Corsair fans... And knowing absolutely nothing about the inner workings of NixOS and systemd. I chose to fix and refine it every day while hitting my token limits on Claude.
 
 ## What it actually does
 
@@ -33,6 +33,10 @@ services.openlinkhub = {
 
 You'll also want to remove `openlinkhub` from `environment.systemPackages` if it's there — the nixpkgs version installs its own conflicting system service.
 
+(and install these dependencies "go, usbutils, pkg-config")
+
 ## Caveats
 
 This is super fragile and not polished or good at all, but it works, at least for now. It bricked my system multiple times due to systemd service misconfiguration. The services are extremely fragile and somehow won't work without a working internet connection on first install. If you want to do a rewrite or have any better, more declarative solutions, be my guest.
+
+"Writeup done by me" - Claude
