@@ -14,7 +14,7 @@ let
   ]);
 
   olhWrapper = pkgs.writeShellScript "openlinkhub-wrapper" ''
-    export LD_LIBRARY_PATH="${libPath}${"\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"}"
+    export LD_LIBRARY_PATH="${libPath}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     exec "${binaryPath}" "$@"
   '';
 
@@ -53,6 +53,16 @@ let
     ${pkgs.coreutils}/bin/mkdir -p "$INSTALL_DIR"
     ${pkgs.rsync}/bin/rsync -a --delete --exclude='.version' "$TMP/$EXTRACTED/" "$INSTALL_DIR/"
     ${pkgs.coreutils}/bin/chmod +x "${binaryPath}"
+
+    # Patch the ELF interpreter so NixOS's stub-ld doesn't intercept it.
+    # LD_LIBRARY_PATH alone cannot help — the binary's PT_INTERP must point
+    # at the real glibc dynamic linker in the Nix store.
+    INTERP=$(ls ${pkgs.glibc}/lib/ld-linux-x86-64.so.* | head -1)
+    ${pkgs.patchelf}/bin/patchelf \
+      --set-interpreter "$INTERP" \
+      --set-rpath "${pkgs.lib.makeLibraryPath (with pkgs; [ stdenv.cc.cc.lib glibc pipewire udev libusb1 ])}" \
+      "${binaryPath}"
+
     echo "$LATEST" > "$STAMP"
     ${pkgs.coreutils}/bin/chown ${cfg.user} "$STAMP" 2>/dev/null || true
     echo "openlinkhub-fetch: done"
@@ -274,7 +284,7 @@ in
         ProtectSystem  = "strict";
         ProtectHome    = "read-only";
         ReadWritePaths = [ installDir ];
-        DeviceAllow    = [ "char-usb_device rw" "char-input rw" ];
+        DeviceAllow    = [ "char-usb_device rw" "char-input rw" "char-hidraw rw" ];
       };
     };
 
